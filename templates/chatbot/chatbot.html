@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1 class="title-page">{% block title %}Discutez avec kosi{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <form class="form-login" method="post">
+    <label for="prompt">Discutez</label>
+    <input name="prompt" id="prompt" required>
+    <input class="btn-log" type="submit" value="send">
+  </form>
+  <p>{{ result }}</p>
+{% endblock %}
