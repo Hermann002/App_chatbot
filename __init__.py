@@ -2,9 +2,14 @@ import os
 
 from flask import Flask, redirect, g
 
+
+
 def create_app(test_config = None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
+    app.secret_key = 'soso' # Ajout d'une cle secrete pour gerer les sessions pour l'historisation
+    UPLOAD_FOLDER = 'uploads/'
+    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
     from . import views
     app.register_blueprint(views.bp)

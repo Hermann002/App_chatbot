@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1 class="title-page">{% block title %}ajouter des documents{% endblock %}</h1>
+{% endblock %}
+{% block content %}
+    <form method="post" enctype="multipart/form-data">
+        <input type="file" name="pdf_file" accept=".pdf">
+        <input type="submit" value="Envoyer">
+    </form>
+    <p>{{ message }}</p>
+{% endblock %}
