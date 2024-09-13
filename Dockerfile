@@ -12,4 +12,4 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["flask", "app", "run", "--host=0.0.0.0"]
+CMD ["flask","--app", "App_chatbot", "run", "--host=0.0.0.0"]

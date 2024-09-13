@@ -23,7 +23,7 @@ bp = Blueprint("views", __name__, url_prefix="/")
 client = Mistral(api_key=api_key)
 model = "mistral-large-latest"
 embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-vectorStore = FAISS.load_local("vectorsDB/faiss.index", embeddings, allow_dangerous_deserialization=True)
+vectorStore = FAISS.load_local("App_chatbot/vectorsDB/faiss.index", embeddings, allow_dangerous_deserialization=True)
 retriever = vectorStore.as_retriever()
 
 def _llm(question, context):
@@ -61,7 +61,7 @@ def vector_docs(pdf_path):
     documents = text_splitter.split_documents(docs)
     
     try:
-        vectorStore = FAISS.load_local("vectorsDB/faiss.index", embeddings, allow_dangerous_deserialization=True)
+        vectorStore = FAISS.load_local("App_chatbot/vectorsDB/faiss.index", embeddings, allow_dangerous_deserialization=True)
         vectorStore.add_documents(documents=documents)
         vectorStore.save_local("vectorsDB/faiss.index")
         print("Création d'une nouvelle base de données vectorielle")
@@ -70,7 +70,7 @@ def vector_docs(pdf_path):
             vectorStore = FAISS.from_documents(documents, embeddings)
         except Exception as e:
             vectorStore = FAISS.from_documents(documents, embeddings)
-        vectorStore.save_local("vectorsDB/faiss.index")
+        vectorStore.save_local("App_chatbot/vectorsDB/faiss.index")
         print("Ajout des données à la base de données vectorielle")
     return vectorStore
 
