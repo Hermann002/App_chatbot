@@ -1,12 +1,17 @@
-from flask import Flask, request, render_template, Blueprint, g, session
+from flask import Flask, request, render_template, Blueprint, g, session, redirect, url_for
+from werkzeug.utils import secure_filename
+
+from App_chatbot.db import get_db
+
 import os
 from decouple import config
+from markupsafe import escape
 
 try:
     os.environ.pop('MISTRAL_API_KEY')
 except Exception:
      pass
-api_key = config('MISTRAL_API_KEY')
+api_key = config('MISTRAL_API_KEY') 
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import WebBaseLoader, PyPDFLoader
@@ -23,8 +28,11 @@ bp = Blueprint("views", __name__, url_prefix="/")
 client = Mistral(api_key=api_key)
 model = "mistral-large-latest"
 embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-vectorStore = FAISS.load_local("App_chatbot/vectorsDB/faiss.index", embeddings, allow_dangerous_deserialization=True)
-retriever = vectorStore.as_retriever()
+
+def retriever_func(agent_name):
+    vectorStore = FAISS.load_local(f"App_chatbot/vectorsDB/{agent_name}_faiss.index", embeddings, allow_dangerous_deserialization=True)
+    retriever = vectorStore.as_retriever()
+    return retriever
 
 def _llm(question, context):
     formatted_prompt = f"question: {question}\n\n context: {context}"
@@ -45,9 +53,10 @@ def combine_docs(docs):
 #     formatted_context = combine_docs(retrieved_docs)
 #     return _llm(question, formatted_context)
 
-def rag_chain(history, question):
+def rag_chain(history, question, agent_name):
     history_text = "\n".join(f"User: {h['user']}\nChatbot: {h['chatbot']}" for h in history)
     full_context = history_text + "\nUser: " + question
+    retriever = retriever_func(agent_name)
     retrieved_docs = retriever.invoke(full_context)
     formatted_context = combine_docs(retrieved_docs)
     return _llm(full_context, formatted_context)
@@ -74,8 +83,16 @@ def vector_docs(pdf_path):
         print("Ajout des données à la base de données vectorielle")
     return vectorStore
 
-@bp.route("/", methods=('GET', 'POST'))
-def chat_bot():
+@bp.route("/")
+def home():
+    return """<h3> Hello, welcome to kosi AI, please ask the link of agent to you provider !</h3>
+            test link: <a href="http://156.67.29.207:5000/Hermann">Hermann agent</a>
+        """
+
+@bp.route("/<agent_name>", methods=('GET', 'POST'))
+def chat_bot(agent_name):
+    agent_name = escape(agent_name)
+    
     if 'conversation_history' not in session:
         session['conversation_history'] = []
 
@@ -87,16 +104,36 @@ def chat_bot():
             message = "Conversation terminée. Merci d'avoir utilisé notre service."
             return render_template("chatbot/chatbot.html", context={'history': [], 'message': message})
         
-        response = rag_chain(session['conversation_history'], user_input)
+        response = rag_chain(session['conversation_history'], user_input, agent_name)
         session['conversation_history'].append({'user': user_input, 'chatbot': response})
         session.modified = True
     
     context = {
         'prompt': "",
         'result': "",
-        'history': session.get('conversation_history', [])
+        'history': session.get('conversation_history', []),
+        'agent_name': agent_name
     }
     return render_template("chatbot/chatbot.html", context=context)
+
+
+# Route pour ajouter un agent
+@bp.route('/add_agent', methods=('GET', 'POST'))
+def add_agent():
+    if 'entreprise_id' not in session:
+        return redirect(url_for('views.login'))
+
+    if request.method == 'POST':
+        agent_name = request.form['agent_name']
+        db = get_db()
+        db.execute(
+            'INSERT INTO agent (agent_name, entreprise_id) VALUES (?, ?)',
+            (agent_name, session['entreprise_id'])
+        )
+        db.commit()
+        return redirect(url_for('views.index'))
+
+    return render_template('chatbot/add_agent.html')
 
 
 @bp.route("/admin/add_documents", methods=('GET', 'POST'))
@@ -114,5 +151,23 @@ def add_documents():
             message = f"une erreur s'est produite {e}"
         return render_template("upload/upload.html", message=message)
     return render_template("upload/upload.html")
-#@app.route("/api_test/")
-# def test_api 
+
+# Route pour la page d'accueil après connexion
+@bp.route('/index')
+def index():
+    if 'entreprise_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    db = get_db()
+    entreprise_id = session['entreprise_id']
+    entreprise = db.execute(
+        'SELECT * FROM entreprise WHERE id = ?', (entreprise_id,)
+    ).fetchone()
+
+    if entreprise is None:
+        return redirect(url_for('auth.login'))
+
+    return render_template('accueil/index.html', entreprise=entreprise)
+
+# @app.route("/api_test/")
+# def test_api

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - App_chatbot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<nav>
+    <h1>App_chatbot</h1>
+    
+    <ul>
+        {% if g.user %}
+            <li><span>{{ g.user['nom'] }}</span></li>
+            <li><a href="{{ url_for('auth.logout') }}">Log Out</a></li>
+            <p>Vous êtes connecté en tant que {{ entreprise.nom }}.</p>
+            <li><a href="{{ url_for('views.add_agent') }}">Ajouter un agent</a></li>
+            <li><a href="{{ url_for('views.chat_bot') }}">Accéder au chatbot</a></li>
+        {% else %}
+            <li><a href="{{ url_for('auth.register') }}">Register</a></li>
+            <li><a href="{{ url_for('auth.login') }}">Log In</a></li>
+        {% endif %}
+    </ul>
+</nav>
+<section class="content">
+    <header>
+        <h2>Welcome to App_chatbot</h2>
+    </header>
+    {% for message in get_flashed_messages() %}
+        <div class="flash">{{ message }}</div>
+    {% endfor %}
+    <p>This is the home page of App_chatbot.</p>
+</section>
+</body>
+</html>

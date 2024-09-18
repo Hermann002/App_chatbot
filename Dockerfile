@@ -1,13 +1,21 @@
-FROM python:3.10-slim
+# step 1
+
+FROM python:3.10-slim AS builder
 
 WORKDIR /app
 
 COPY requirements.txt .
 
 RUN pip install --upgrade pip
+RUN pip install --prefix=/install -r requirements.txt
 
-RUN pip install -r requirements.txt
+# step 2
 
+FROM python:3.10-alpine
+
+WORKDIR /app
+
+COPY --from=builder /install /usr/local
 COPY . .
 
 EXPOSE 5000

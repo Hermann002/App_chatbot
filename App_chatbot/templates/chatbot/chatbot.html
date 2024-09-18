@@ -13,12 +13,18 @@
   {% if context['history'] %}
       <div class="conversation-history" id="markdown-content">
           {% for exchange in context['history'] %}
-              <p style="text-align: left;"><strong>Vous:</strong>  {{ exchange['user'] }}</p>
-              <p class="markdown-text"></p><strong>Chatbot: </strong>{{ exchange['chatbot'] }}</p>
+              <p class="user-input-p">
+                  <span class="user-icon">U</span>
+                  <span class="user-input"><strong></strong>  {{ exchange['user'] }}</span>
+              </p>
+              <p class="chatbot-response-p">
+                  <span class="chatbot-icon"><img src="{{ url_for('static', filename='media/favicon.ico') }}" ></span>
+                  <span class="chatbot-response"><strong> </strong>{{ exchange['chatbot'] }}</span>
+              </p>
           {% endfor %}
       </div>
   {% endif %}
-
+<p>{{ context['agent_name'] }}</p>
   <form class="form-login" method="post">
     <label for="prompt">Discutez</label>
     <input name="prompt" id="prompt" required>

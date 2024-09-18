@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ajouter un agent</title>
+</head>
+<body>
+    <h1>Ajouter un nouvel agent</h1>
+    <form method="post">
+        <label for="agent_name">Nom de l'agent :</label>
+        <input type="text" id="agent_name" name="agent_name" required>
+        <button type="submit">Ajouter</button>
+    </form>
+    <a href="{{ url_for('views.index') }}">Retour à l'accueil</a>
+</body>
+</html>

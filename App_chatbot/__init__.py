@@ -10,7 +10,10 @@ def create_app(test_config = None):
     app.secret_key = 'soso' # Ajout d'une cle secrete pour gerer les sessions pour l'historisation
     UPLOAD_FOLDER = 'uploads/'
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
+    app.config.from_mapping(
+        DATABASE=os.path.join(app.instance_path, 'chatbot.sqlite'),
+    )
+   
     from . import views
     app.register_blueprint(views.bp)
 
@@ -25,5 +28,11 @@ def create_app(test_config = None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
+    
+    from . import db
+    db.init_app(app)
+    
+    from . import auth
+    app.register_blueprint(auth.bp)
 
     return app
