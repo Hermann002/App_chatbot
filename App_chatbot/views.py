@@ -85,9 +85,7 @@ def vector_docs(pdf_path):
 
 @bp.route("/")
 def home():
-    return """<h3> Hello, welcome to kosi AI, please ask the link of agent to you provider !</h3>
-            test link: <a href="http://156.67.29.207:5000/Hermann">Hermann agent</a>
-        """
+    return render_template("accueil/home.html")
 
 @bp.route("/<agent_name>", methods=('GET', 'POST'))
 def chat_bot(agent_name):
@@ -117,7 +115,7 @@ def chat_bot(agent_name):
     return render_template("chatbot/chatbot.html", context=context)
 
 
-# Route pour ajouter un agent
+# add agent
 @bp.route('/add_agent', methods=('GET', 'POST'))
 def add_agent():
     if 'entreprise_id' not in session:
@@ -126,9 +124,10 @@ def add_agent():
     if request.method == 'POST':
         agent_name = request.form['agent_name']
         db = get_db()
+        url_vers_la_BD = f"App_chatbot/vectorsDB/{agent_name}_faiss.index"
         db.execute(
-            'INSERT INTO agent (agent_name, entreprise_id) VALUES (?, ?)',
-            (agent_name, session['entreprise_id'])
+            'INSERT INTO agent (agent_name, url_vers_la_BD, entreprise_id) VALUES (?, ?, ?)',
+            (agent_name, url_vers_la_BD ,session['entreprise_id'])
         )
         db.commit()
         return redirect(url_for('views.index'))
@@ -164,10 +163,22 @@ def index():
         'SELECT * FROM entreprise WHERE id = ?', (entreprise_id,)
     ).fetchone()
 
+    try:
+        agents = db.execute(
+            f'SELECT * FROM agent WHERE entreprise_id = {entreprise_id}'
+        ).fetchall()
+    except Exception as e:
+        agents = None
+        print(e)
+
+    context = {
+        "entreprise": entreprise,
+        "agents": agents
+    }
     if entreprise is None:
         return redirect(url_for('auth.login'))
 
-    return render_template('accueil/index.html', entreprise=entreprise)
+    return render_template('accueil/index.html', context=context)
 
 # @app.route("/api_test/")
 # def test_api

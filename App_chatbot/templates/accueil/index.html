@@ -1,25 +1,25 @@
-<!doctype html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home - App_chatbot</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-<nav>
+{% extends 'base.html' %}
+{% block title %}accueil Kosi ai{% endblock %}
+
+{% block content %}
     <h1>App_chatbot</h1>
     
     <ul>
         {% if g.user %}
             <li><span>{{ g.user['nom'] }}</span></li>
             <li><a href="{{ url_for('auth.logout') }}">Log Out</a></li>
-            <p>Vous êtes connecté en tant que {{ entreprise.nom }}.</p>
+            <p>Vous êtes connecté en tant que {{ context.entreprise.nom }}.</p>
             <li><a href="{{ url_for('views.add_agent') }}">Ajouter un agent</a></li>
-            <li><a href="{{ url_for('views.chat_bot') }}">Accéder au chatbot</a></li>
+            {% if context.agents is not none %}
+                {% for agent in context["agents"] %}
+                    <li><a href="{{ url_for('views.chat_bot', agent_name=agent['agent_name']) }}">{{agent['agent_name']}} agent</a></li>
+                {% endfor %}
+            {% endif %}
         {% else %}
             <li><a href="{{ url_for('auth.register') }}">Register</a></li>
             <li><a href="{{ url_for('auth.login') }}">Log In</a></li>
+            <h3> Hello, welcome to kosi AI, please ask the link of agent to you provider !</h3>
+            test link: <a href="http://156.67.29.207:5000/Hermann">Hermann agent</a>
         {% endif %}
     </ul>
 </nav>
@@ -32,5 +32,5 @@
     {% endfor %}
     <p>This is the home page of App_chatbot.</p>
 </section>
-</body>
+{% endblock %}
 </html>
