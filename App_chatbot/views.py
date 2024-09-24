@@ -1,8 +1,9 @@
-from flask import Flask, request, render_template, Blueprint, g, session, redirect, url_for
+from flask import Flask, request, render_template, Blueprint, g, session, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 
 from App_chatbot.db import get_db
 
+from markdown import markdown
 import os
 from decouple import config
 from markupsafe import escape
@@ -35,7 +36,7 @@ def retriever_func(agent_name):
     return retriever
 
 def _llm(question, context):
-    formatted_prompt = f"question: {question}\n\n context: {context}"
+    formatted_prompt = f"Le contexte de la conversation est {context}. \n maintenant l'utilisateur demande {question}"
     response = client.chat.complete(
         model=model,
         messages=[{
@@ -62,7 +63,7 @@ def rag_chain(history, question, agent_name):
     return _llm(full_context, formatted_context)
 
 
-def vector_docs(pdf_path):
+def vector_docs(pdf_path, agent_name):
 
     loader = PyPDFLoader(pdf_path)
     docs = loader.load()
@@ -70,16 +71,16 @@ def vector_docs(pdf_path):
     documents = text_splitter.split_documents(docs)
     
     try:
-        vectorStore = FAISS.load_local("App_chatbot/vectorsDB/faiss.index", embeddings, allow_dangerous_deserialization=True)
+        vectorStore = FAISS.load_local(f"App_chatbot/vectorsDB/{agent_name}_faiss.index", embeddings, allow_dangerous_deserialization=True)
         vectorStore.add_documents(documents=documents)
-        vectorStore.save_local("vectorsDB/faiss.index")
+        vectorStore.save_local(f"vectorsDB/{agent_name}_faiss.index")
         print("Création d'une nouvelle base de données vectorielle")
     except Exception as e:
         try : 
             vectorStore = FAISS.from_documents(documents, embeddings)
         except Exception as e:
             vectorStore = FAISS.from_documents(documents, embeddings)
-        vectorStore.save_local("App_chatbot/vectorsDB/faiss.index")
+        vectorStore.save_local(f"App_chatbot/vectorsDB/{agent_name}_faiss.index")
         print("Ajout des données à la base de données vectorielle")
     return vectorStore
 
@@ -89,7 +90,22 @@ def home():
 
 @bp.route("/<agent_name>", methods=('GET', 'POST'))
 def chat_bot(agent_name):
-    agent_name = escape(agent_name)
+    print(g.user[0])
+    try:
+        print(f"{session['agent_name']} ici")
+        if session['agent_name'] != agent_name:
+            session.pop('conversation_history', None)
+    except Exception as e:
+        print(e)
+
+    session['agent_name'] = agent_name
+    db = get_db()
+    try: 
+        owner = db.execute(f"SELECT entreprise_id FROM agent WHERE agent_name='{agent_name}'").fetchone()[0]
+        print(owner)
+    except Exception as e:
+        owner = None
+        print(e)
     
     if 'conversation_history' not in session:
         session['conversation_history'] = []
@@ -100,23 +116,25 @@ def chat_bot(agent_name):
         if user_input.upper() == "FIN":
             session.pop('conversation_history', None)
             message = "Conversation terminée. Merci d'avoir utilisé notre service."
-            return render_template("chatbot/chatbot.html", context={'history': [], 'message': message})
+            return render_template("chatbot/chatbot.html", context={'history': [], 'message': message, "agent_name": agent_name})
         
-        response = rag_chain(session['conversation_history'], user_input, agent_name)
-        session['conversation_history'].append({'user': user_input, 'chatbot': response})
-        session.modified = True
+        try: 
+            response = markdown(rag_chain(session['conversation_history'], user_input, agent_name))
+            session['conversation_history'].append({'user': user_input, 'chatbot': response})
+            session.modified = True
+        except Exception as e:
+            flash("le chatbot n'est pas prêt pour l'utilisation, veuillez contacter l'entreprise directement")
     
     context = {
-        'prompt': "",
-        'result': "",
         'history': session.get('conversation_history', []),
-        'agent_name': agent_name
+        'agent_name': agent_name,
+        'owner': owner
     }
     return render_template("chatbot/chatbot.html", context=context)
 
 
 # add agent
-@bp.route('/add_agent', methods=('GET', 'POST'))
+@bp.route('/admin/add_agent', methods=('GET', 'POST'))
 def add_agent():
     if 'entreprise_id' not in session:
         return redirect(url_for('views.login'))
@@ -125,34 +143,40 @@ def add_agent():
         agent_name = request.form['agent_name']
         db = get_db()
         url_vers_la_BD = f"App_chatbot/vectorsDB/{agent_name}_faiss.index"
-        db.execute(
-            'INSERT INTO agent (agent_name, url_vers_la_BD, entreprise_id) VALUES (?, ?, ?)',
-            (agent_name, url_vers_la_BD ,session['entreprise_id'])
-        )
-        db.commit()
+        try:
+            db.execute(
+                'INSERT INTO agent (agent_name, url_vers_la_BD, entreprise_id) VALUES (?, ?, ?)',
+                (agent_name, url_vers_la_BD ,session['entreprise_id'])
+            )
+            db.commit()
+        except db.IntegrityError:
+            error = f"ce nom {agent_name} existe déjà"
+            flash(error)
         return redirect(url_for('views.index'))
 
     return render_template('chatbot/add_agent.html')
 
 
-@bp.route("/admin/add_documents", methods=('GET', 'POST'))
-def add_documents():
+@bp.route("/admin/add_documents/<agent_name>", methods=('GET', 'POST'))
+def add_documents(agent_name):
+    flash('Les documents doivent être au format pdf')
     if request.method == "POST":
         pdf_file = request.files["pdf_file"]
         try:
             pdf_path = os.path.join(create_app().config['UPLOAD_FOLDER'], pdf_file.filename)
             pdf_file.save(pdf_path)
-            vector_docs(pdf_path)
+            vector_docs(pdf_path, agent_name)
             print(pdf_path)
             message = "document ajouté avec succès"
             os.remove(pdf_path)
         except Exception as e:
             message = f"une erreur s'est produite {e}"
+
         return render_template("upload/upload.html", message=message)
     return render_template("upload/upload.html")
 
 # Route pour la page d'accueil après connexion
-@bp.route('/index')
+@bp.route('/admin')
 def index():
     if 'entreprise_id' not in session:
         return redirect(url_for('auth.login'))

@@ -17,7 +17,7 @@ CREATE TABLE entreprise (
 
 CREATE TABLE agent (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    agent_name VARCHAR(50) NOT NULL,
+    agent_name VARCHAR(50) NOT NULL UNIQUE,
     url_vers_la_BD VARCHAR(255),
     entreprise_id INTEGER,
     FOREIGN KEY (entreprise_id) REFERENCES entreprise(id)

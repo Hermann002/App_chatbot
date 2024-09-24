@@ -15,11 +15,6 @@
                     <li><a href="{{ url_for('views.chat_bot', agent_name=agent['agent_name']) }}">{{agent['agent_name']}} agent</a></li>
                 {% endfor %}
             {% endif %}
-        {% else %}
-            <li><a href="{{ url_for('auth.register') }}">Register</a></li>
-            <li><a href="{{ url_for('auth.login') }}">Log In</a></li>
-            <h3> Hello, welcome to kosi AI, please ask the link of agent to you provider !</h3>
-            test link: <a href="http://156.67.29.207:5000/Hermann">Hermann agent</a>
         {% endif %}
     </ul>
 </nav>

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block header %}
-<h1 class="title-page">{% block title %}Discutez avec Kosi{% endblock %}</h1>
+<h1 class="title-page">{% block title %}Discutez avec {{context['agent_name']}}{% endblock %}</h1>
 {% endblock %}
 
 {% block content %}
@@ -15,19 +15,28 @@
           {% for exchange in context['history'] %}
               <p class="user-input-p">
                   <span class="user-icon">U</span>
-                  <span class="user-input"><strong></strong>  {{ exchange['user'] }}</span>
+                  <span class="user-input"><strong></strong>{{ exchange['user'] }}</span>
               </p>
               <p class="chatbot-response-p">
                   <span class="chatbot-icon"><img src="{{ url_for('static', filename='media/favicon.ico') }}" ></span>
-                  <span class="chatbot-response"><strong> </strong>{{ exchange['chatbot'] }}</span>
+                  <div class="chatbot-response">
+                    {{ exchange['chatbot'] | safe }}
+                  </div>
               </p>
           {% endfor %}
+          
       </div>
   {% endif %}
-<p>{{ context['agent_name'] }}</p>
+
+  
+  
   <form class="form-login" method="post">
     <label for="prompt">Discutez</label>
     <input name="prompt" id="prompt" required>
     <input class="btn-log" type="submit" value="Envoyer">
   </form>
+  
+  {% if g.user[0] == context['owner'] and g.user != None %}
+  <p><a class="btn-log" href="{{ url_for('views.add_documents', agent_name=context['agent_name'])}}">Ajouter des documents</a></p>
+  {% endif %}
 {% endblock %}

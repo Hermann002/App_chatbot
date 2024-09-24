@@ -8,7 +8,7 @@ def create_app(test_config = None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     app.secret_key = 'soso' # Ajout d'une cle secrete pour gerer les sessions pour l'historisation
-    UPLOAD_FOLDER = 'uploads/'
+    UPLOAD_FOLDER = 'App_chatbot/uploads/'
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     app.config.from_mapping(
         DATABASE=os.path.join(app.instance_path, 'chatbot.sqlite'),
