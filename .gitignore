@@ -3,3 +3,5 @@
 api.py
 
 .env
+
+/vectorsDB

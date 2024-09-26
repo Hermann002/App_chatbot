@@ -2,6 +2,9 @@
 
 {% block header %}
 <h1 class="title-page">{% block title %}Discutez avec {{context['agent_name']}}{% endblock %}</h1>
+  {% if g.user[0] == context['owner'] and g.user != None %}
+  <a href="{{ url_for('views.index') }}">retour à l'accueil</a>
+  {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -37,6 +40,6 @@
   </form>
   
   {% if g.user[0] == context['owner'] and g.user != None %}
-  <p><a class="btn-log" href="{{ url_for('views.add_documents', agent_name=context['agent_name'])}}">Ajouter des documents</a></p>
+  <p><a href="{{ url_for('views.add_documents', agent_name=context['agent_name'])}}">Ajouter des documents</a></p>
   {% endif %}
 {% endblock %}

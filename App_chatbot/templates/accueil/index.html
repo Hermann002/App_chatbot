@@ -2,30 +2,25 @@
 {% block title %}accueil Kosi ai{% endblock %}
 
 {% block content %}
-    <h1>App_chatbot</h1>
-    
-    <ul>
-        {% if g.user %}
-            <li><span>{{ g.user['nom'] }}</span></li>
-            <li><a href="{{ url_for('auth.logout') }}">Log Out</a></li>
-            <p>Vous êtes connecté en tant que {{ context.entreprise.nom }}.</p>
-            <li><a href="{{ url_for('views.add_agent') }}">Ajouter un agent</a></li>
-            {% if context.agents is not none %}
-                {% for agent in context["agents"] %}
-                    <li><a href="{{ url_for('views.chat_bot', agent_name=agent['agent_name']) }}">{{agent['agent_name']}} agent</a></li>
-                {% endfor %}
+{% if g.user %}
+<header>
+    <p>Vous êtes connecté en tant que {{ context.entreprise.nom }}.</p>
+    <div>
+        <a class="btn-back" href="{{ url_for('views.add_agent') }}">Ajouter un agent</a>
+        <ul>
+                {% if context.agents is not none %}
+                    {% for agent in context["agents"] %}
+                        <li><a href="{{ url_for('views.chat_bot', agent_name=agent['agent_name']) }}">{{agent['agent_name']}} agent</a></li>
+                    {% endfor %}
+                {% endif %}
             {% endif %}
-        {% endif %}
-    </ul>
-</nav>
+        </ul>
+    </div>
+</header>
 <section class="content">
-    <header>
-        <h2>Welcome to App_chatbot</h2>
-    </header>
     {% for message in get_flashed_messages() %}
         <div class="flash">{{ message }}</div>
     {% endfor %}
-    <p>This is the home page of App_chatbot.</p>
 </section>
 {% endblock %}
 </html>
