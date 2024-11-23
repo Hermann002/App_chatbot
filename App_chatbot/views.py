@@ -81,7 +81,7 @@ def vector_docs(pdf_path, agent_name):
         except Exception as e:
             vectorStore = FAISS.from_documents(documents, embeddings)
         vectorStore.save_local(f"App_chatbot/vectorsDB/{agent_name}_faiss.index")
-        print("Ajout des données à la base de données vectorielle")
+        print("Ajout des données à la base de données vectorielle") 
     return vectorStore
 
 @bp.route("/")
